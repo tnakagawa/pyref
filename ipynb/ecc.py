@@ -68,7 +68,7 @@ class ECCPoint:
         if other.x == None:
             return self.__class__(self.a, self.b, self.x, self.y)
         if self.x == other.x and self.y != other.y:
-            return self.__class__(None, None, self.a, self.b)
+            return self.__class__(self.a, self.b, None, None)
         if self.x != other.x:
             s = (self.y - other.y) / (self.x - other.x)
             x = s**2 - self.x - other.x
