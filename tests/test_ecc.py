@@ -3,6 +3,7 @@ from ipynb.ecc import FiniteField
 from ipynb.ecc import ECCPoint
 from ipynb.ecc import sha256
 from ipynb.ecc import ripemd160
+from ipynb.ecc import G
 
 SECP256K1_TEST_VECTOR = [
     [
@@ -540,7 +541,14 @@ class TestECCPoint(unittest.TestCase):
             0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798, p)
         y = FiniteField(
             0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8, p)
-        G = ECCPoint(a, b, x, y)
+        G = ECCPoint(x, y, a, b)
+        for test in SECP256K1_TEST_VECTOR:
+            P = test[0] * G
+            self.assertEqual(P.x.num, test[1])
+            self.assertEqual(P.y.num, test[2])
+        return
+
+    def test_S256(self):
         for test in SECP256K1_TEST_VECTOR:
             P = test[0] * G
             self.assertEqual(P.x.num, test[1])
