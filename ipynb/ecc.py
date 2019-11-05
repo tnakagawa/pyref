@@ -52,11 +52,11 @@ class FiniteField:
 
 
 class ECCPoint:
-    def __init__(self, a, b, x, y):
-        self.a = a
-        self.b = b
+    def __init__(self, x, y, a, b):
         self.x = x
         self.y = y
+        self.a = a
+        self.b = b
         if self.x is None and self.y is None:
             return
         if self.y**2 != self.x**3 + self.a * self.x + self.b:
@@ -67,36 +67,61 @@ class ECCPoint:
         if self.a != other.a or self.b != other.b:
             raise TypeError('They are not the same curve.')
         if self.x == None:
-            return other.__class__(other.a, other.b, other.x, other.y)
+            return other.__class__(other.x, other.y, other.a, other.b)
         if other.x == None:
-            return self.__class__(self.a, self.b, self.x, self.y)
+            return self.__class__(self.x, self.y, self.a, self.b)
         if self.x == other.x and self.y != other.y:
-            return self.__class__(self.a, self.b, None, None)
+            return self.__class__(None, None, self.a, self.b)
         if self.x != other.x:
             s = (self.y - other.y) / (self.x - other.x)
             x = s**2 - self.x - other.x
             y = s * (self.x - x) - self.y
-            return self.__class__(self.a, self.b, x, y)
+            return self.__class__(x, y, self.a, self.b)
         if self == other and self.y == 0 * self.x:
-            return self.__class__(self.a, self.b, None, None)
+            return self.__class__(None, None, self.a, self.b)
         if self == other:
             s = (3 * self.x**2 + self.a) / (2 * self.y)
             x = s**2 - 2 * self.x
             y = s * (self.x - x) - self.y
-            return self.__class__(self.a, self.b, x, y)
+            return self.__class__(x, y, self.a, self.b)
 
     def __rmul__(self, coefficient):
         if self.x is None:
-            return self.__class__(self.a, self.b, None, None)
+            return self.__class__(None, None, self.a, self.b)
         coef = coefficient
-        current = self.__class__(self.a, self.b, self.x, self.y)
-        result = self.__class__(self.a, self.b, None, None)
+        current = self.__class__(self.x, self.y, self.a, self.b)
+        result = self.__class__(None, None, self.a, self.b)
         while coef:
             if coef & 1:
                 result += current
             current += current
             coef >>= 1
         return result
+
+
+class S256FF(FiniteField):
+    P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
+
+    def __init__(self, num, p=None):
+        super().__init__(num, self.P)
+
+
+class S256P(ECCPoint):
+    N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+
+    def __init__(self, x, y, a=None, b=None):
+        if type(x) == int:
+            super().__init__(S256FF(x), S256FF(y), S256FF(0), S256FF(7))
+        else:
+            super().__init__(x, y, S256FF(0), S256FF(7))
+
+    def __rmul__(self, coefficient):
+        coef = coefficient % self.N
+        return super().__rmul__(coef)
+
+
+G = S256P(0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798,
+          0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8)
 
 
 class sha256:
